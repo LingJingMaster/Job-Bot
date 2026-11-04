@@ -204,6 +204,44 @@ def _parse(snapshot_id: str, requirements: list[Requirement]) -> JDParse:
     return JDParse(snapshot_id=snapshot_id, status="ok", requirements=requirements)
 
 
+def _pdf_text_from_bytes(data: bytes) -> str:
+    pieces: list[str] = []
+    cursor = 0
+    while True:
+        start = data.find(b"<", cursor)
+        if start < 0:
+            break
+        end = data.find(b">", start + 1)
+        if end < 0:
+            break
+        cursor = end + 1
+        if not data.startswith(b"> Tj", end):
+            continue
+        hex_text = data[start + 1 : end]
+        if not hex_text or any(byte not in b"0123456789abcdefABCDEF" for byte in hex_text):
+            continue
+        blob = bytes.fromhex(hex_text.decode("ascii"))
+        if blob.startswith(b"\xfe\xff"):
+            blob = blob[2:]
+        pieces.append(blob.decode("utf-16-be"))
+    return "".join(pieces)
+
+
+def _pdf_bytes_outside_streams(data: bytes) -> bytes:
+    kept = bytearray()
+    cursor = 0
+    while True:
+        start = data.find(b"stream", cursor)
+        if start < 0:
+            kept.extend(data[cursor:])
+            return bytes(kept)
+        kept.extend(data[cursor:start])
+        end = data.find(b"endstream", start)
+        if end < 0:
+            return bytes(kept)
+        cursor = end + len(b"endstream")
+
+
 def _read_docx(path: Path) -> str:
     with zipfile.ZipFile(path) as archive:
         xml_bytes = archive.read("word/document.xml")
@@ -518,6 +556,9 @@ def test_pipeline_approve_export_and_revision_guard(data_dir: Path, no_llm: None
     assert "甲公司" in material.content
     with pytest.raises(ApprovalBlocked, match="尚未批准|不能批准"):
         export(material.id, "docx")
+    with pytest.raises(ApprovalBlocked, match="尚未批准|不能批准"):
+        export(material.id, "pdf")
+    assert list((data_dir / "exports").glob("*.pdf")) == []
     approved = approve(material.id)
     assert approved.status == "approved"
     assert approved.content == material.content
@@ -534,9 +575,21 @@ def test_pipeline_approve_export_and_revision_guard(data_dir: Path, no_llm: None
     assert work_id not in document_xml
     assert "fact_ids" not in document_xml
     assert "verb_escalation" not in document_xml
-    with pytest.raises(JobBotError, match="本轮未做"):
-        export(approved.id, "pdf")
-    assert list((data_dir / "exports").glob("*.pdf")) == []
+    pdf_path = export(approved.id, "pdf")
+    assert pdf_path.name == f"{approved.content_hash}.pdf"
+    assert list((data_dir / "exports").glob("*.pdf")) == [pdf_path]
+    pdf_bytes = pdf_path.read_bytes()
+    assert pdf_bytes.startswith(b"%PDF")
+    recovered = _pdf_text_from_bytes(pdf_bytes)
+    assert recovered == approved.content
+    assert "甲公司" in recovered
+    assert "甲公司".encode("utf-16-be").hex().encode("ascii") in pdf_bytes
+    outside = _pdf_bytes_outside_streams(pdf_bytes)
+    for hidden in ("fact_ids", "verb_escalation", "check_status", "api_key", "API_KEY", "Cookie", "cookie"):
+        assert hidden.encode("utf-8") not in pdf_bytes
+    for hidden in (work_id, skill_id, approved.id, profile.id):
+        assert hidden.encode("utf-8") not in outside
+        assert hidden not in recovered
     with connect_db() as connection:
         with pytest.raises(JobBotError, match="不可修改"):
             update_by_id(connection, "material", approved.id, {"content": "被改掉的正文"})

@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from jobbot.config import Settings
 from jobbot.contracts import Budget, BudgetExceeded, JobBotError, LLMUnavailable
 from jobbot.llm.gateway import REPLAY_CACHE_MISS, Gateway, HttpResponse
+from jobbot.privacy import confirm_cloud_outbound
 
 
 class Echo(BaseModel):
@@ -57,6 +58,7 @@ def _ok(value: str = "ok", cost: float | None = None) -> HttpResponse:
 
 
 def _gateway(tmp_path, steps: list[object], **overrides: object) -> tuple[Gateway, ScriptedTransport, list[float]]:
+    confirm_cloud_outbound(tmp_path)
     slept: list[float] = []
     transport = ScriptedTransport(steps)
     gateway = Gateway(_settings(tmp_path, **overrides), transport, sleep=slept.append)

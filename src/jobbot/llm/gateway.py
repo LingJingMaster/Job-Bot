@@ -28,6 +28,7 @@ from jobbot.db.connection import connect, migrate, new_id
 from jobbot.db.repository import insert
 from jobbot.llm.cache import DiskCache, canonical_json, input_hash, make_cache_key, template_hash
 from jobbot.llm.schemas import schema_version_of
+from jobbot.privacy import ensure_cloud_confirmed, redacted_outbound
 
 logger = logging.getLogger("jobbot.llm")
 
@@ -240,9 +241,13 @@ class Gateway:
         budget: Budget,
     ) -> tuple[str, "_CallMeta"]:
         del purpose
+        self._refuse_unconfirmed_cloud_call()
         self._ensure_budget(budget)
         budget.calls_used += 1
         return self._post_model(template, variables, schema)
+
+    def _refuse_unconfirmed_cloud_call(self) -> None:
+        ensure_cloud_confirmed(self.settings.data_dir)
 
     def _post_model(
         self,
@@ -250,6 +255,10 @@ class Gateway:
         variables: dict[str, Any],
         schema: type[BaseModel],
     ) -> tuple[str, "_CallMeta"]:
+        self._refuse_unconfirmed_cloud_call()
+        outbound_template, outbound_variables = redacted_outbound(
+            self.settings.data_dir, template, variables
+        )
         url = self.settings.llm_base_url.rstrip("/") + "/chat/completions"
         headers = {
             "Authorization": f"Bearer {self.settings.llm_api_key}",
@@ -261,7 +270,10 @@ class Gateway:
             "response_format": {"type": "json_object"},
             "messages": [
                 {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": _render_user_message(template, variables, schema)},
+                {
+                    "role": "user",
+                    "content": _render_user_message(outbound_template, outbound_variables, schema),
+                },
             ],
         }
         started = time.perf_counter()

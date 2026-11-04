@@ -1,14 +1,16 @@
 """导出已批准正文。DOCX 用标准库写 Office Open XML，不嵌入字体文件。
+PDF 用标准库写最小文件：正文以带 BOM 的 UTF-16BE 放进十六进制字符串，再用 Tj 显示。
+不下载、不嵌入字体。汉字留在文件字节里，可从十六进制解回。
 
 字体名：Noto Sans CJK SC。
 许可证：SIL Open Font License 1.1。
-本轮不打包字体文件。汉字以 Unicode 写入 word/document.xml，回读不依赖本机是否安装该字体。
-PDF 本轮未做，不生成占位文件。
+本轮不打包字体文件。DOCX 汉字以 Unicode 写入 word/document.xml，回读不依赖本机是否安装该字体。
 """
 
 from __future__ import annotations
 
 import hashlib
+import re
 import zipfile
 from pathlib import Path
 from typing import Literal
@@ -40,6 +42,10 @@ _DOCUMENT_RELS = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>
 """
 
+_PDF_HEADER = b"%PDF-1.4\n"
+_PDF_UTF16_BOM = b"\xfe\xff"
+_PDF_SHOWN_HEX = re.compile(rb"<([0-9A-Fa-f]+)>\s*Tj")
+
 
 def export(material_id: str, fmt: Literal["docx", "pdf", "txt"]) -> Path:
     material = load_material(material_id)
@@ -59,17 +65,11 @@ def export(material_id: str, fmt: Literal["docx", "pdf", "txt"]) -> Path:
             saved=True,
             next_step="不要使用这份材料，重新生成一个版本。",
         )
-    if fmt == "pdf":
-        raise JobBotError(
-            "本轮未做 PDF 导出。没有生成 PDF 文件。",
-            saved=True,
-            next_step="请改用 DOCX 或 TXT。",
-        )
-    if fmt not in {"docx", "txt"}:
+    if fmt not in {"docx", "txt", "pdf"}:
         raise JobBotError(
             "导出格式只能是 docx、txt 或 pdf。没有生成文件。",
             saved=True,
-            next_step="改用 docx 或 txt。",
+            next_step="改用 docx、txt 或 pdf。",
         )
     directory = exports_dir()
     directory.mkdir(parents=True, exist_ok=True)
@@ -77,9 +77,15 @@ def export(material_id: str, fmt: Literal["docx", "pdf", "txt"]) -> Path:
     if fmt == "txt":
         path.write_text(material.content, encoding="utf-8")
         extracted = path.read_text(encoding="utf-8")
-    else:
+    elif fmt == "docx":
         _write_docx(path, material.content)
         extracted = extract_docx_text(path)
+    else:
+        _write_pdf(path, material.content)
+        try:
+            extracted = extract_pdf_text(path)
+        except (ValueError, UnicodeDecodeError):
+            extracted = None
     if extracted != material.content:
         path.unlink(missing_ok=True)
         raise JobBotError(
@@ -140,3 +146,34 @@ def _xml_safe(value: str) -> str:
 
 def _xml_text(value: str) -> str:
     return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def extract_pdf_text(path: Path) -> str:
+    data = path.read_bytes()
+    return "".join(_decode_utf16_hex(match.group(1)) for match in _PDF_SHOWN_HEX.finditer(data))
+
+
+def _write_pdf(path: Path, content: str) -> None:
+    stream = _pdf_content_stream(content)
+    length = str(len(stream)).encode("ascii")
+    objects = (
+        b"1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n",
+        b"2 0 obj << /Type /Pages /Count 1 /Kids [3 0 R] >> endobj\n",
+        b"3 0 obj << /Type /Page /Parent 2 0 R /Contents 4 0 R >> endobj\n",
+        b"4 0 obj << /Length " + length + b" >> stream\n" + stream + b"\nendstream endobj\n",
+    )
+    path.write_bytes(_PDF_HEADER + b"".join(objects) + b"trailer << /Root 1 0 R >>\n%%EOF\n")
+
+
+def _pdf_content_stream(content: str) -> bytes:
+    encoded = _PDF_UTF16_BOM + content.encode("utf-16-be")
+    return b"BT <" + encoded.hex().encode("ascii") + b"> Tj ET"
+
+
+def _decode_utf16_hex(raw: bytes) -> str:
+    if len(raw) % 2 != 0:
+        raise ValueError("PDF 十六进制长度不是偶数")
+    blob = bytes.fromhex(raw.decode("ascii"))
+    if not blob.startswith(_PDF_UTF16_BOM):
+        raise ValueError("PDF 正文不是带 BOM 的 UTF-16BE")
+    return blob[len(_PDF_UTF16_BOM) :].decode("utf-16-be")

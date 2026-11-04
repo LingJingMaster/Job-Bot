@@ -64,22 +64,29 @@ def test_settings_page_shows_matrix_mask_and_does_not_claim_success(
     assert "不能把未连接说成已连通" in clicked
 
 
-def test_other_pages_say_not_implemented(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_tracking_page_does_not_contact_platforms(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     from streamlit.testing.v1 import AppTest
 
     _prepare_env(monkeypatch, tmp_path)
-    pages = [
-        ROOT / "app" / "views" / "tracking.py",
-        ROOT / "app" / "views" / "labels.py",
-    ]
-    for page in pages:
-        app = AppTest.from_file(str(page))
-        app.run()
-        assert not app.exception, (page.name, app.exception)
-        text = _visible(app)
-        assert "尚未实现" in text
-        assert "数据未保存" in text
-        assert "成功" not in text or "没有导入成功" in text or "不存在可以称为成功" in text
+    app = AppTest.from_file(str(ROOT / "app" / "views" / "tracking.py"))
+    app.run()
+    assert not app.exception, app.exception
+    text = _visible(app)
+    assert "不向任何外部地址发出请求" in text
+    assert "没有把任何岗位记成已投递" in text
+
+
+def test_labels_page_does_not_score_without_jobs(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    from streamlit.testing.v1 import AppTest
+
+    _prepare_env(monkeypatch, tmp_path)
+    app = AppTest.from_file(str(ROOT / "app" / "views" / "labels.py"))
+    app.run()
+    assert not app.exception, app.exception
+    text = _visible(app)
+    assert "本次没有打分" in text
+    assert "分数" not in text
+    assert "排名" not in text
 
 
 def test_match_page_does_not_rank_without_profile(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
