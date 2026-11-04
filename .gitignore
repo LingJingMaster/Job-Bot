@@ -6,3 +6,21 @@ __pycache__/
 # 课程原始文件暂不入库
 *.doc
 *.docx
+
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+*.log
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+.streamlit/secrets.toml
+.python-version

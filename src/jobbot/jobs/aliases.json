@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "cities": [
+    {"canonical": "北京", "aliases": ["北京", "北京市"]},
+    {"canonical": "上海", "aliases": ["上海", "上海市"]},
+    {"canonical": "广州", "aliases": ["广州", "广州市"]},
+    {"canonical": "深圳", "aliases": ["深圳", "深圳市"]},
+    {"canonical": "杭州", "aliases": ["杭州", "杭州市"]}
+  ],
+  "skills": [
+    {"canonical": "Python", "aliases": ["Python", "Python3", "Python 3", "python3"]},
+    {"canonical": "Java", "aliases": ["Java"]},
+    {"canonical": "JavaScript", "aliases": ["JavaScript", "JS"]}
+  ]
+}

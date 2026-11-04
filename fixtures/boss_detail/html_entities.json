@@ -1,0 +1,29 @@
+{
+  "_notice": "合成，不是真实抓取",
+  "http_status": 200,
+  "body": {
+    "code": 0,
+    "message": "synthetic html entities",
+    "zpData": {
+      "jobInfo": {
+        "jobName": "合成岗位 &amp; 假数据-900006",
+        "salaryDesc": "10-20K&amp;13薪",
+        "locationName": "合成市&#45;900006",
+        "experienceName": "3&#45;5年",
+        "degreeName": "本科&amp;以上",
+        "postDescription": "需要 A&amp;B。合成描述，假编号 900006。这不是真实职位。",
+        "encryptId": "synthetic-job-900006",
+        "encryptUserId": "synthetic-user-900006"
+      },
+      "brandComInfo": {
+        "brandName": "合成公司&amp;900006"
+      },
+      "bossInfo": {
+        "title": "合成称谓&amp;顾问",
+        "activeTimeDesc": "刚刚&amp;活跃",
+        "name": "合成姓名己",
+        "encryptUserId": "synthetic-user-900006"
+      }
+    }
+  }
+}

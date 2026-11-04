@@ -1,0 +1,29 @@
+{
+  "_notice": "合成，不是真实抓取",
+  "http_status": 200,
+  "body": {
+    "code": 0,
+    "message": "synthetic ok",
+    "zpData": {
+      "jobInfo": {
+        "jobName": "合成岗位-假数据-001",
+        "salaryDesc": "900-901K",
+        "locationName": "合成市-900001",
+        "experienceName": "99年",
+        "degreeName": "合成学历-900001",
+        "postDescription": "合成描述，假编号 900001。这不是真实职位。",
+        "encryptId": "synthetic-job-900001",
+        "encryptUserId": "synthetic-user-900001"
+      },
+      "brandComInfo": {
+        "brandName": "合成公司-900001"
+      },
+      "bossInfo": {
+        "title": "合成称谓",
+        "activeTimeDesc": "合成活跃描述",
+        "name": "合成姓名甲",
+        "encryptUserId": "synthetic-user-900001"
+      }
+    }
+  }
+}

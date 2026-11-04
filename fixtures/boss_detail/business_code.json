@@ -1,0 +1,24 @@
+{
+  "_notice": "合成，不是真实抓取",
+  "http_status": 200,
+  "body": {
+    "code": 7,
+    "message": "synthetic business code",
+    "zpData": {
+      "jobInfo": {
+        "jobName": "合成岗位-假数据-900009",
+        "salaryDesc": "909-910K",
+        "postDescription": "合成描述，假编号 900009。这不是真实职位。业务 code 不是 0。",
+        "encryptId": "synthetic-job-900009",
+        "encryptUserId": "synthetic-user-900009"
+      },
+      "brandComInfo": {
+        "brandName": "合成公司-900009"
+      },
+      "bossInfo": {
+        "name": "合成姓名辛",
+        "encryptUserId": "synthetic-user-900009"
+      }
+    }
+  }
+}

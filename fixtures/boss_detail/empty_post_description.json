@@ -1,0 +1,26 @@
+{
+  "_notice": "合成，不是真实抓取",
+  "http_status": 200,
+  "body": {
+    "code": 0,
+    "message": "synthetic empty postDescription",
+    "zpData": {
+      "jobInfo": {
+        "jobName": "合成岗位-假数据-900007",
+        "salaryDesc": "907-908K",
+        "locationName": "合成市-900007",
+        "postDescription": "   ",
+        "encryptId": "synthetic-job-900007",
+        "encryptUserId": "synthetic-user-900007"
+      },
+      "brandComInfo": {
+        "brandName": "合成公司-900007"
+      },
+      "bossInfo": {
+        "title": "合成称谓",
+        "name": "合成姓名庚",
+        "encryptUserId": "synthetic-user-900007"
+      }
+    }
+  }
+}

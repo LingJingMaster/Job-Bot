@@ -1,0 +1,9 @@
+{
+  "_notice": "合成，不是真实抓取",
+  "http_status": 200,
+  "body": {
+    "code": 0,
+    "message": "synthetic empty zpData",
+    "zpData": {}
+  }
+}

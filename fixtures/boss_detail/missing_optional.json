@@ -1,0 +1,15 @@
+{
+  "_notice": "合成，不是真实抓取",
+  "http_status": 200,
+  "body": {
+    "code": 0,
+    "message": "synthetic missing optional fields",
+    "zpData": {
+      "jobInfo": {
+        "jobName": "合成岗位-假数据-900008",
+        "postDescription": "合成描述，假编号 900008。只有岗位名和职位描述。这不是真实职位。",
+        "encryptId": "synthetic-job-900008"
+      }
+    }
+  }
+}
