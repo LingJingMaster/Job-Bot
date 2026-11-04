@@ -1,0 +1,8 @@
+.DS_Store
+.env
+data/
+__pycache__/
+*.pyc
+# 课程原始文件暂不入库
+*.doc
+*.docx
